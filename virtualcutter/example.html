@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
+    <title>Virtual Cutter Demo</title>
+    <meta name="Version" content="$Rev: 267 $" />
+    <link rel="stylesheet" href="./assets/virtualcutter.all.css" type="text/css" media="screen" charset="utf-8" />
+    <script type="text/javascript" charset="utf-8" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script type="text/javascript" charset="utf-8" src="./assets/virtualcutter.all.js"></script>
+  </head>
+  <body>
+    <div id="wrapper">
+      <h1>Virtual Cutter</h1>
+
+      <div id="virtualcutter" class="virtualcutter">
+
+        <div class="player">
+          <video id="video-js" class="video-js" width="100%" preload="auto" data-fallback="http://video-js.zencoder.com/oceans-clip.mp4" poster="http://video-js.zencoder.com/oceans-clip.png">
+            <source src="http://video-js.zencoder.com/oceans-clip.mp4" type='video/mp4; codecs="avc1.42E01E, mp4a.40.2"' />
+            <source src="http://video-js.zencoder.com/oceans-clip.webm" type='video/webm; codecs="vp8, vorbis"' />
+            <source src="http://video-js.zencoder.com/oceans-clip.ogv" type='video/ogg; codecs="theora, vorbis"' />
+            <img src="http://video-js.zencoder.com/oceans-clip.png" width="640" height="264" alt="Poster Image" title="No video playback capabilities." />
+          </video>
+        </div>
+        <div class="vc-controls"></div>
+        <div class="vc-extras">
+          <div class="markers box">
+             <h2>Select a clip</h2>
+             <div class="box_content">
+               <div class="start_mark">
+                 <button type="button" class="btn-mark-start"><span>Mark start</span></button>
+                 <input type="text" class="txt-start-mark" value="00:00:00" maxlength="11" />
+                 <button type="button" class="play-from-here"><span>Preview clip</span></button>
+               </div>
+               <div class="end_mark">
+                 <button type="button" class="btn-mark-end"><span>Mark end</span></button>
+                 <input type="text" value="" class="txt-end-mark" maxlength="11" />
+               </div>
+             </div>
+           </div>
+           <div class="links box">
+             <h2>Share your clip</h2>
+             <div class="box_content">
+               <div class="vc-item">
+                 <label for="vc-share-url">Share URL:</label>
+                 <input type="text" id="vc-share-url" readonly="readonly" class="txt-share-url" value="" />
+               </div>
+               <div class="vc-item">
+                 <label for="vc-share-embed">Embed:</label>
+                 <input type="text" id="vc-share-embed" readonly="readonly" class="txt-share-embed" value="" />
+               </div>
+             </div>
+           </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

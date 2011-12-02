@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * Install file for weblectures_mm
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function weblectures_mm_uninstall() {
+  variable_del('weblectures_mm_profiles');
+  variable_del('weblectures_mm_media_types');
+  variable_del('weblectures_ui_default_still');
+}

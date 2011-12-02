@@ -1,0 +1,570 @@
+/* $Id: virtualcutter.less 269 2011-12-02 09:09:55Z thijs $ */
+
+@import "reset.less";
+@import "mixins.less";
+
+@darkestGrey:   #161616;
+@darkerGrey:    #484848;
+@grey:          #cbcbcb;
+@lightGrey:     #dbdbdb;
+@lighterGrey:   #ececec;
+@lightestGrey:  #f6f6f6;
+
+@ratio:         1.05;
+@baseFont:      13px;
+@lineHeight:    15px;
+@baseGap:       10px;
+@buttonGap:     15px;
+@buttonImgSize: 16px;
+@buttonHeight:  @buttonGap * 2 + @buttonImgSize;
+@wrapperWidth:  550px;
+
+// Page style.
+body {
+  background-image: url(images/bg.png);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: @baseFont;
+  line-height: @lineHeight;
+  margin: 0;
+  padding: 0;
+}
+textarea, input, select, button {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: @baseFont;
+}
+
+h1, h2, h3 {
+  font-weight: bold;
+}
+
+#wrapper {
+  text-align: left;
+  position: relative;
+  margin: 0;
+  padding: 0;
+  margin: auto;
+  width: @wrapperWidth;
+  margin-top: @baseGap;
+}
+
+#wrapper h1 {
+  margin-bottom: @baseGap;
+  margin-top: 0;
+  font-size: round(@baseFont * 2.25);
+  line-height: round(@lineHeight * 2);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+.virtualcutter {
+  position: relative;
+  width: @wrapperWidth;
+}
+
+// Video element.
+/* Box containing video, controls, and download links.
+   Will be set to the width of the video element through JS
+   If you want to add some kind of frame or special positioning, use another containing element, not video-js-box. */
+.virtualcutter video.video-js {
+  background-color: #000;
+  position: relative;
+  padding: 0;
+}
+
+.virtualcutter .vc-flash-fallback {
+  display: block;
+}
+
+// Poster overlay.
+.virtualcutter img.vc-poster {
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+// Subtitles
+.virtualcutter .vc-subtitles {
+  color: #fff;
+  font-size: 20em;
+  text-align: center;
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+}
+
+// Styles loaded check.
+.vc-styles-check {
+  height: 5px;
+  position: absolute;
+}
+
+// Grouped two elements together because they have the same style requirements.
+.virtualcutter {
+  .player,
+  .vc-controls,
+  .box {
+    #gradient > .vertical(@lightestGrey, @lighterGrey);
+    .box-shadow-alpha(0 0 1px, @grey, .75);
+    .border-radius(5px);
+    border: 1px solid @lightGrey;
+  }
+}
+
+// Player style.
+.virtualcutter .player {
+  padding: @baseGap;
+}
+/*
+.vc-loading .player object,
+.vc-loading .player embed,
+.vc-loading .player video {
+  visibility: hidden;
+}
+.vc-loading .player {
+  background-image: url(images/loading.gif);
+  background-repeat: no-repeat;
+  background-position: center 110px;
+  background-color: #f6f6f6;
+}
+.vc-loading .vc-controls,
+.vc-loading .vc-extras {
+  .opacity(50);
+}
+*/
+
+.virtualcutter .vc-controls {
+  margin-top: @baseGap;
+  height: @buttonHeight;
+  border-top: 1px solid rgba(255, 255, 255, 0.75);
+  .transition(opacity 0.2s ease-in);
+}
+
+// Markers & links boxes.
+.virtualcutter .vc-extras {
+  overflow: hidden;
+  margin-top: @baseGap;
+  padding: 0 1px @baseGap 2px; // The 1px is to account for the borders of player and controls.
+  .transition(opacity 0.2s ease-in);
+}
+
+.virtualcutter .vc-controls div {
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  float: left;
+}
+
+.virtualcutter .vc-controls .control-button {
+  border-left: 1px solid @lightGrey;
+  cursor: pointer;
+}
+
+.virtualcutter .vc-controls .vc-forward-control {
+  border-right: 1px solid @lightGrey;
+}
+
+.virtualcutter .vc-controls .vc-play-control span,
+.virtualcutter .vc-controls .vc-forward-control span,
+.virtualcutter .vc-controls .vc-rewind-control span,
+.virtualcutter .vc-controls .vc-volume-control .volume-button {
+  background-image: url(images/player_sprite.png);
+  background-repeat: no-repeat;
+  border-right: 1px solid #feffff;
+  display: block;
+  width: round(@buttonHeight * @ratio);
+  height: @buttonHeight;
+}
+
+.vc-controls .vc-play-control span {
+  background-position: -111px 0;
+}
+.vc-controls .vc-play-control span:hover,
+.vc-controls .vc-play-control span:active {
+  background-position: -165px 0;
+}
+
+.vc-paused .vc-play-control span,
+.vc-stopped .vc-play-control span {
+  background-position: -1px 0;
+}
+
+.vc-paused .vc-controls .vc-play-control span:hover,
+.vc-paused .vc-controls .vc-play-control span:active,
+.vc-stopped .vc-controls .vc-play-control span:hover,
+.vc-stopped .vc-controls .vc-play-control span:active {
+  background-position: -55px 0;
+}
+
+.virtualcutter .vc-controls .vc-volume-control {
+  border-right: 0;
+  border-left: 1px solid #feffff;
+  float: right;
+  margin-right: 2px;
+}
+
+.virtualcutter .vc-controls .vc-volume-control .volume-button {
+  border-left: 1px solid #d1d9df;
+  border-right: 0;
+}
+
+.virtualcutter .vc-controls .vc-rewind-control span {
+  background-position: -4px -48px;
+}
+
+.virtualcutter .vc-controls .vc-rewind-control span:hover,
+.virtualcutter .vc-controls .vc-rewind-control span:active {
+  background-position: -58px -48px;
+}
+
+.virtualcutter .vc-controls .vc-forward-control span {
+  background-position: -110px -48px;
+}
+
+.virtualcutter .vc-controls .vc-forward-control span:hover,
+.virtualcutter .vc-controls .vc-forward-control span:active {
+  background-position: -164px -48px;
+}
+
+.virtualcutter .vc-controls .vc-volume-control .volume-button {
+  background-position: -2px -192px;
+}
+
+.virtualcutter .vc-controls .vc-volume-control .volume-button:hover,
+.virtualcutter .vc-controls .vc-volume-control .volume-button:active {
+  background-position: -56px -192px;
+}
+
+.virtualcutter .vc-controls .vc-volume-control .volume-button.muted {
+  background-position: -110px -192px;
+}
+
+.virtualcutter .vc-controls .vc-volume-control .volume-button.muted:hover,
+.virtualcutter .vc-controls .vc-volume-control .volume-button.muted:active {
+  background-position: -164px -192px;
+}
+
+.virtualcutter .vc-controls .vc-time-control {
+  padding: @buttonGap round(@buttonGap * .33) 0 @buttonGap;
+  font-size: round(@baseFont * 1.1);
+  line-height: 1;
+  color: #333;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
+  cursor: default;
+}
+
+.virtualcutter .vc-controls .vc-progress-control {
+  margin-left: @buttonGap;
+  margin-top: @buttonGap + 1;
+  position: relative;
+}
+
+.virtualcutter .vc-controls .vc-progress-holder {
+  #gradient > .vertical(@darkestGrey, @darkerGrey);
+  border-bottom: 1px solid #fff;
+  .border-radius(5px);
+  position: relative;
+  width: (@wrapperWidth - 330); // @todo Find a way to make this flexible, or percentual.
+  height: @buttonImgSize - 2;
+}
+
+.virtualcutter .vc-controls .vc-play-progress {
+  // @todo Play progress background should be a bit higher and should allow height resizing.
+  display: block;
+  background-image: url(images/progress_play_bg.png);
+  border-top: 1px solid #ecc96a;
+  border-bottom: 1px solid #ecc96a;
+  margin-left: -1px;
+  padding-right: 2px; // Small hack to get play handle and progress in correct position.
+  -moz-border-radius-topleft: 5px;
+   -webkit-border-top-left-radius: 5px;
+  border-top-left-radius: 5px;
+  -moz-border-radius-bottomleft: 5px;
+   -webkit-border-bottom-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  height: @buttonGap - 3;
+  width: 1px; // Default width.
+  position: absolute;
+  *zoom: 1; // IE fix
+}
+
+.virtualcutter .vc-controls .vc-load-progress {
+  display: block;
+  #gradient > .vertical(#3f4d5d, #4b5f6d);
+  .border-radius(5px);
+  position: absolute;
+  height: @buttonGap - 2;
+  .opacity(50);
+  .transition(width 0.2s linear);
+  width: 1px; // Default width.
+  *zoom: 1; // IE fix
+}
+
+.virtualcutter .vc-controls .vc-play-handle {
+  background-image: url(images/player_sprite.png);
+  background-position: -17px -154px;
+  position: absolute;
+  width: 20px;
+  height: 27px;
+  cursor: pointer;
+  margin-left: -10px;
+  left: 0;
+}
+
+.virtualcutter .vc-controls .vc-play-handle:active,
+.virtualcutter .vc-controls .vc-play-handle:hover {
+  -webkit-transition: none;
+  background-position: -71px -154px;
+}
+
+.virtualcutter .vc-controls .volume-button {
+  position: relative;
+}
+
+.virtualcutter .vc-controls .volume-holder {
+  display: none;
+  position: absolute;
+  top: -80px;
+  left: 12px;
+  height: 91px;
+  width: 25px;
+  z-index: 2000;
+}
+
+.virtualcutter .vc-controls .volume-button:hover .volume-holder {
+  display: block;
+}
+
+.virtualcutter .vc-controls .volume-button.muted .volume-holder {
+  display: none;
+}
+
+.virtualcutter .vc-controls .volume-holder span {
+  background-image: url(images/player_sprite.png);
+  background-position: -16px -305px;
+  background-repeat: no-repeat;
+  position: absolute;
+  bottom: 0;
+  width: 25px;
+  height: 13px;
+  z-index: 4;
+}
+
+.virtualcutter .vc-controls .volume-holder .volume-container {
+  #gradient > .vertical(@lightestGrey, @lighterGrey);
+  border: 1px solid #c9d0d6;
+  -webkit-border-top-left-radius: 4px;
+  -moz-border-radius-topleft: 4px;
+  border-top-left-radius: 4px;
+  -webkit-border-top-right-radius: 4px;
+  -moz-border-radius-topright: 4px;
+  border-top-right-radius: 4px;
+  position: absolute;
+  height: 66px;
+  width: 10px;
+  padding: 6px;
+}
+
+.virtualcutter .vc-controls .volume-holder .volume-bar {
+  #gradient > .vertical(@darkestGrey, @darkerGrey);
+  border-bottom: 1px solid #fff;
+  .border-radius(5px);
+  position: relative;
+  height: 63px;
+  width: 10px;
+}
+
+.virtualcutter .vc-controls .volume-holder .volume-level {
+  #gradient > .vertical(#7ea9e2, #609ac6);
+  border-bottom: 1px solid #fff;
+  .border-radius(5px);
+  width: 8px;
+  position: absolute;
+  bottom: -1px;
+  border: 1px #50a2da solid;
+  height: 100%;
+}
+
+.virtualcutter .vc-controls .volume-holder .volume-handle {
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  background-image: url(images/player_sprite.png);
+  background-position: -18px -254px;
+  margin-top: -8px;
+  position: absolute;
+  left: -4px;
+  height: 20px;
+  width: 20px;
+  cursor: pointer;
+  z-index: 10;
+  top: 0; // By default show 100% volume.
+}
+
+.virtualcutter .vc-controls .volume-holder .volume-handle:active,
+.virtualcutter .vc-controls .volume-holder .volume-handle:hover {
+  background-position: -72px -254px;
+  cursor: pointer;
+}
+
+.virtualcutter .vc-controls .marker {
+  background-image: url(images/player_sprite.png);
+  background-position: -17px -106px;
+  margin-left: -10px;
+  position: absolute;
+  width: 20px;
+  height: 27px;
+  top: -(@buttonGap - 2);
+  cursor: col-resize;
+  display: none;
+}
+
+.virtualcutter .vc-controls .vc-start-mark {
+  left: 0;
+}
+.virtualcutter .vc-controls .vc-end-mark {
+  right: 0;
+}
+
+.virtualcutter .vc-controls .vc-marking-spacer {
+  #gradient > .vertical(#87bde6, #6baada);
+  position: absolute;
+  height: @buttonImgSize - 2;
+  left: 0;
+  -moz-border-radius-bottomleft: 5px;
+   -webkit-border-bottom-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+  -moz-border-radius-bottomright: 5px;
+   -webkit-border-bottom-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+  .opacity(65);
+}
+
+.virtualcutter .box {
+  width: round((@wrapperWidth / 2) - (@baseGap * 0.75));
+  float: left;
+}
+
+.virtualcutter .links.box {
+  float: right;
+}
+
+.virtualcutter .box h2 {
+  #gradient > .vertical(@darkerGrey, @darkestGrey);
+  -moz-border-radius-topleft: 5px;
+   -webkit-border-top-left-radius: 5px;
+  border-top-left-radius: 5px;
+  -moz-border-radius-topright: 5px;
+   -webkit-border-top-right-radius: 5px;
+  border-top-right-radius: 5px;
+  border-bottom: 1px #000 solid;
+  padding: round(@baseGap * .9) @baseGap;
+  margin: 0;
+  font-size: round(@baseFont * 1.1);
+  line-height: 100%;
+  color: #fff;
+  text-shadow: 0 -1px 1px rgba(0, 0, 0, 0.9);
+}
+
+.virtualcutter .box_content {
+  overflow: hidden;
+  padding: @baseGap;
+}
+
+.markers .box_content button {
+  #gradient > .vertical(white, @lighterGrey);
+  .box-shadow-alpha(0 0 1px, @grey, .75);
+  .border-radius(5px);
+  border: 1px solid #d8dee3;
+  margin-bottom: @baseGap;
+  padding: round(@baseGap * .8) 0 round(@baseGap * 0.5);
+  text-align: center;
+  font-size: round(@baseFont);
+  font-weight: bold;
+  display: block;
+  width: round(@wrapperWidth * .21);
+  cursor: pointer;
+}
+
+.markers .box_content button:hover {
+  background-position: 0 -10px;
+  padding: round(@baseGap * .8) + 1 0 round(@baseGap * 0.5) - 1;
+}
+
+.markers .box_content .play-from-here {
+  margin-top: @baseGap;
+  margin-bottom: 0;
+}
+
+.markers .box_content button span {
+  background-image: url(images/vc_sprite.png);
+  background-position: 0 -10px;
+  background-repeat: no-repeat;
+  display: block;
+  height: 20px;
+  padding-left: @baseGap;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+.virtualcutter .markers .box_content .play-from-here span {
+  background-position: 0 -51px;
+}
+
+.virtualcutter .links .box_content label {
+  font-size: round(@baseFont);
+  line-height: round(@lineHeight * 1.1);
+  font-weight: bold;
+  color: #282a2c;
+  display: block;
+  float: left;
+  text-align: left;
+  padding: 0;
+  width: auto;
+}
+
+.virtualcutter .box_content input {
+  border: 1px solid #d8dee3;
+  text-align: center;
+  font-size: round(@baseFont * 1.66);
+  font-weight: bold;
+  color: #71aedc;
+  width: round(@wrapperWidth * .21) - 4;
+  .border-radius(5px);
+  padding: 1px;
+  height: auto;
+}
+
+.virtualcutter .links .box_content .vc-item,
+.virtualcutter .markers .box_content .start_mark,
+.virtualcutter .markers .box_content .end_mark {
+  margin-bottom: round(@baseGap * .5);
+  overflow: hidden;
+  *zoom: 1;
+}
+
+.virtualcutter .links .box_content input {
+  font-size: round(@baseFont);
+  font-weight: normal;
+  text-align: left;
+  color: #4f5357;
+  width: round((@wrapperWidth / 2) - (@baseGap * 0.75) - (@baseGap * 3.5));
+  padding: (@baseGap * .6);
+}
+
+.virtualcutter .markers .box_content .end_mark,
+.virtualcutter .markers .box_content .start_mark {
+  float: left;
+}
+
+.virtualcutter .markers .box_content .start_mark {
+  margin-right: @baseGap;
+}

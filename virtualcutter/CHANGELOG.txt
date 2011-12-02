@@ -1,0 +1,17 @@
+CHANGELOG $Id: CHANGELOG.txt 270 2011-12-02 09:10:32Z thijs $
+
+1.0-beta2
+- Removed functionality where object tag was hidden during loading, because not
+  all flash players (IE) correctly communicate when they're finished.
+- Height calculation is now done fully based on width and aspect ratio with
+  fallback to defaultAspectRatio.
+
+1.0-beta1
+- Changed button ratio to make them less wide to allow for a wider progress bar.
+- Removed the resources directory.
+- Removed index.php and made it into a static example.html, only issue there is
+  that remote linking to an mp4 file for flash requires a crossdomain.xml on
+  the hosting server, which might not be available or doesn't allow all domains
+  from http://video-js.zencoder.com/
+- Changed default aspect ratio to 16:9.
+- Added LICENSE, README and CHANGELOG files.

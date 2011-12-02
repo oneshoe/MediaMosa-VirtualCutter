@@ -1,0 +1,16 @@
+<?php
+// $Id: virtualcutter.install 267 2011-12-01 16:37:37Z thijs $
+
+/**
+ * @file
+ * Install/uninstall functions.
+ */
+
+/**
+ * Implements hook_uninstall().
+ * Used for deleting used variables.
+ */
+function virtualcutter_uninstall() {
+  variable_del('virtualcutter_playback_url');
+  variable_del('virtualcutter_embed_code');
+}

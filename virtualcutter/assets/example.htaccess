@@ -1,0 +1,10 @@
+AddType video/ogg .ogm
+AddType video/ogg .ogv
+AddType video/ogg .ogg
+AddType application/ogg .ogg
+AddType video/webm .webm
+AddType audio/webm .weba
+AddType video/mp4 .mp4
+AddType video/x-m4v .m4v
+
+# $Id: example.htaccess 267 2011-12-01 16:37:37Z thijs $

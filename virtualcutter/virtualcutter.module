@@ -1,0 +1,107 @@
+<?php
+// $Id: virtualcutter.module 267 2011-12-01 16:37:37Z thijs $
+
+/**
+ * @file
+ * Module integrating the VirtualCutter interface with MediaMosa.
+ *
+ * VirtualCutter
+ * A web-based tool for making a virtual "selection" of an existing video and
+ * return a start- and end time for use in HTML5 and/or Flash players that
+ * support the Media Fragments standard.
+ *
+ * The VirtualCutter is developed by One Shoe (www.oneshoe.nl) for the
+ * University of Groningen (ww.rug.nl), co-funded by SURFnet (www.surfnet.nl)
+ * for use in the MediaMosa project (www.mediamosa.org).
+ *
+ * For more information see http://www.mediamosa.org or contact SURFnet via
+ * http://www.surfnet.nl or One Shoe at http://www.oneshoe.nl/contact.
+ *
+ * This project uses code from VideoJS and Flowplayer. VideoJS is licensed as
+ * GNU Lesser General Public License, version 3 (LGPLv3) and Flowplayer is
+ * licensed under GNU General Public License, version 3 (GPLv3). As the latter
+ * is more restrictive in embedding into other projects under a different
+ * license, this project is licensed under GPLv3.
+ *
+ * @license
+ * This module is licensed under GPLv3 and not under the commonly used GPLv2
+ * for Drupal modules. This is because this project includes a copy of the
+ * Flowplayer which is released under GPLv3.
+ *
+ * @author One Shoe - http://www.oneshoe.nl
+ */
+
+define('VIRTUALCUTTER_DEFAULT_EMBED', '<iframe src="{%playback_url%}" width="100%" height="100%" frameborder="0"></iframe>');
+
+/**
+ * Implements hook_menu().
+ */
+function virtualcutter_menu() {
+  $items = array();
+
+  $items['virtualcutter/%virtualcutter_presentation'] = array(
+    'title' => 'Virtual cutter',
+    'description' => 'Select a play fragment from a video.',
+    'access callback' => 'virtualcutter_presentation_access',
+    'access arguments' => array(1),
+    'page callback' => 'virtualcutter_presentation_page',
+    'page arguments' => array(1),
+    'file' => 'virtualcutter.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/config/media/virtualcutter'] = array(
+    'title' => 'Virtual cutter',
+    'description' => 'Configure preferences for the Virtual cutter like play links and iframe code.',
+    'access arguments' => array('administer virtual cutter'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('virtualcutter_configure_form'),
+    'file' => 'virtualcutter.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function virtualcutter_permission() {
+  return array(
+    'administer virtual cutter' => array(
+      'title' => t('Administer Virtual cutter settings'),
+    ),
+  );
+}
+
+/**
+ * Loads an asset from the remote MediaMosa instance using the Weblectures MM
+ * module and preprocess it to a presentation object.
+ *
+ * @param string $asset_id MediaMosa asset ID.
+ */
+function virtualcutter_presentation_load($asset_id) {
+  return weblectures_mm_asset_to_presentation($asset_id);
+}
+
+/**
+ * Access callback function for checking access to a certain asset.
+ * @todo Someone should implement access control either here or a few steps
+ *   higher up in the MediaMosa connector steps.
+ */
+function virtualcutter_presentation_access($presentation, $account = NULL) {
+  return user_access('access content', $account);
+}
+
+/**
+ * Implements hook_theme().
+ */
+function virtualcutter_theme() {
+  return array(
+    'virtualcutter' => array(
+      'variables' => array(
+        'presentation' => NULL,
+      ),
+      'file' => 'virtualcutter.pages.inc',
+    ),
+  );
+}

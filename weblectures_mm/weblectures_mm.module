@@ -1,0 +1,399 @@
+<?php
+
+/**
+ * @file
+ * Module file
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * @return An array of menu items.
+ */
+function weblectures_mm_menu() {
+  $items = array();
+
+  $items['admin/config/media/weblectures_mm'] = array(
+    'title' => 'Weblectures configuration',
+    'description' => 'Configure weblecture settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('weblectures_mm_admin_form'),
+    'access arguments' => array('administer weblectures_mm'),
+    'file' => 'weblectures_mm.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permissions().
+ */
+function weblectures_mm_permission() {
+  return array(
+    'administer weblectures_mm' => array(
+      'title' => t('Administer weblectures_mm'),
+      'description' => t('Access administration functions and settings of the weblectures_mm module.'),
+    ),
+  );
+}
+
+/**
+ * Get the statically cahce connector instance.
+ * @param bool $reset_session
+ */
+function weblectures_mm_get_connector($reset_session = FALSE) {
+  $mediamosa_connector = &drupal_static(__CLASS__ . '::' . __FUNCTION__, FALSE);
+
+  // Create when not found.
+  if (empty($mediamosa_connector)) {
+    $mediamosa_connector = new mediamosa_connector();
+  }
+
+  // Reset session when needed.
+  if ($reset_session) {
+    $mediamosa_connector->reset_session();
+  }
+
+  return $mediamosa_connector;
+}
+
+/**
+ * Get the list of transcoding profiles from mediamosa.
+ */
+function weblectures_mm_get_profiles() {
+  $profiles = array();
+  $connector = weblectures_mm_get_connector();
+  $result = $connector->request_get('transcode/profile');
+
+  if (mediamosa_connector::check_result($result, NULL, 'ERROR: %code - %message')) {
+    foreach ($result->xml->items->item as $item) {
+      $profiles[(string)$item->profile_id] = (string)$item->profile;
+    }
+  }
+  return $profiles;
+}
+
+/**
+ * Parse a duration in the form HH:MM:SS to seconds.
+ * @param string $string Duration
+ * @return (float) seconds
+ */
+function weblectures_mm_parse_duration($string) {
+  list($hours, $minutes, $seconds) = explode(':', $string);
+  $duration = (float)(3600 * $hours + 60 * $minutes + $seconds);
+  return $duration;
+}
+
+/**
+ * Tranforms a presentation to a fideo media array.
+ * @param object $presentation
+ */
+function weblectures_mm_presentation_to_fideo($presentation) {
+  $media = array();
+  $video_count = 0;
+  // @todo Make sure this can work without using this naming scheme.
+  $names = array('primary', 'secondary', 'tertiary', 'quaternary', 'quinary');
+
+  foreach ($presentation->videosources as $video) {
+    $name = isset($names[$video_count]) ? $names[$video_count] : 'video-' . $video_count;
+    $media += weblectures_mm_video_to_fideo($name, $video);
+    $video_count++;
+  }
+
+  if ($video_count) {
+
+    // Add slides.
+    // @TODO: support multiple sets of slides, one for each video for example.
+    if (isset($presentation->slidesources[0]->slides)) {
+      $slides = $presentation->slidesources[0]->slides;
+      $media['slides'] = array(
+        '#type' => 'slides',
+        '#target' => 'fideo-primary',
+      );
+      $nr = 1;  // Alt tags of slides are numbered with this.
+      foreach ($slides as $slide) {
+        $media['slides'][] = array(
+          '#type' => 'slide',
+          '#start' => (float)$slide->marker,
+          '#file' => $slide->url,
+          '#alt' => isset($slide->title) ? $slide->title : t('Slide @nr', array('@nr' => $nr++)),
+        );
+      }
+    }
+  }
+  // Create a wrapper.
+  $media['#prefix'] = '<div id="fideo"><div class="fideo-wrapper">';
+  $media['#suffix'] = '</div></div>';
+  return $media;
+}
+
+/**
+ * Format second to time.
+ * @param float $seconds
+ * @return string HH:MM:SS
+ */
+function weblectures_mm_format_duration($seconds) {
+  $times = array(3600, 60, 1);
+  $time = '';
+  $tmp = '';
+  for ($i = 0; $i < 3; $i++) {
+    $tmp = floor($seconds / $times[$i]);
+    if ($tmp < 1) {
+      $tmp = '00';
+    }
+    elseif ($tmp < 10) {
+      $tmp = '0' . $tmp;
+    }
+    $time .= $tmp;
+    if ($i < 2) {
+      $time .= ':';
+    }
+    $seconds = $seconds % $times[$i];
+  }
+  return $time;
+}
+
+/**
+ * Return the mediafile_id of the best matching transcoding for the requested type
+ * @param array $transcodings array of transcoding_profile_id => mediafile_id
+ * @param string $type media type, e.g. video/mp4
+ */
+function weblectures_mm_get_mediafile_id_by_type($transcodings, $type) {
+  $known_profiles = variable_get('weblectures_mm_profiles', array());
+  if (isset($known_profiles[$type])) {
+    $desired_profiles = $known_profiles[$type];
+    foreach ($desired_profiles as $profile) {
+      if (isset($transcodings[$profile])) {
+        return $transcodings[$profile];
+      }
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Create a fideo element from a weblectures presentation video
+ * @param object $presentation The weblecture presentation
+ * @param int $index
+ */
+function weblectures_mm_video_to_fideo($name, $video) {
+  $media = array(
+    $name => array(
+      '#type' => 'video',
+      '#id' => 'fideo-' . $name,
+      '#duration' => $video->duration,
+      '#attributes' => array(
+        'width' => $video->width,
+        'height' => $video->height,
+        'controls' => TRUE,
+      ),
+      '#poster' => $video->still,
+    ),
+  );
+  $transcoding_count = 0;
+  if (isset($video->transcodings)) {
+    // Add videos
+    if ($mediafile_id = weblectures_mm_get_mediafile_id_by_type($video->transcodings, 'video/mp4')) {
+      $media[$name]['mp4'] = array(
+        '#type' => 'source',
+        '#mimetype' => 'video/mp4',
+        '#codecs' => 'avc1.42E01E, mp4a.40.2',
+        '#file' => weblectures_mm_get_video_url($video->asset_id, $mediafile_id),
+      );
+      $transcoding_count++;
+    }
+    if ($mediafile_id = weblectures_mm_get_mediafile_id_by_type($video->transcodings, 'video/webm')) {
+      $media[$name]['webm'] = array(
+        '#type' => 'source',
+        '#mimetype' => 'video/webm',
+        '#codecs' => 'vp8, vorbis',
+        '#file' => weblectures_mm_get_video_url($video->asset_id, $mediafile_id),
+      );
+      $transcoding_count++;
+    }
+    if ($mediafile_id = weblectures_mm_get_mediafile_id_by_type($video->transcodings, 'video/ogg')) {
+      $media[$name]['ogv'] = array(
+        '#type' => 'source',
+        '#mimetype' => 'video/ogg',
+        '#codecs' => 'theora, vorbis',
+        '#file' => weblectures_mm_get_video_url($video->asset_id, $mediafile_id),
+      );
+      $transcoding_count++;
+    }
+  }
+
+  // Remove the video element if there are no transcodings available.
+  if (!$transcoding_count) {
+    $mediafile_id = $video->mediafile_id;
+    $media[$name] = array(
+      '#type' => 'markup',
+      '#value' => l(t('No player available. Click this link to download video.'), weblectures_mm_get_video_url($video->asset_id, $mediafile_id, NULL, 'download')),
+      '#id' => 'fideo-' . $name,
+    );
+  }
+  return $media;
+}
+
+/**
+ * Return a list of presentations including information about available counts
+ * @param int $limit The maximum amount of presentations to get.
+ * @param int $offset The start index in the list of presentations.
+ * @return array ($item_count, $total_items, $presentations) where
+ */
+function weblectures_mm_get_presentations($limit = 9, $offset = 0) {
+  $connector = weblectures_mm_get_connector();
+
+  $options = array(
+    'data' => array(
+      'order_by' => 'videotimestamp',
+      'order_direction' => 'desc',
+      'limit' => $limit,
+      'offset' => $offset,
+    ),
+  );
+  $result = $connector->request_get('asset', $options);
+  if (mediamosa_connector::check_result($result, NULL, 'ERROR: %code - %message')) {
+    $total_items = (int)$result->xml->header->item_count_total;
+    $presentations = array();
+    // Create output for the presentation teasers.
+    foreach ($result->xml->items->item as $item) {
+      $presentations[] = weblectures_mm_parse_asset($item);
+    }
+    return array($total_items, $presentations);
+  }
+  return FALSE;
+}
+
+/**
+ * Create a presentation from an asset_id.
+ * @param string $asset_id Asset identifier.
+ * @return object $presentation A presentation object.
+ */
+function weblectures_mm_asset_to_presentation($asset_id, $refresh = FALSE) {
+  $assets = &drupal_static(__FUNCTION__);
+
+  if (!isset($assets[$asset_id]) || $refresh) {
+    $assets[$asset_id] = FALSE;
+
+    $connector = weblectures_mm_get_connector();
+    // Request details for an asset.
+    $options = array(
+      'data' => array(
+        'asset_id' => $asset_id,
+      ),
+    );
+    $result = $connector->request_get('assets', $options);
+    if (mediamosa_connector::check_result($result, NULL, 'ERROR: %code - %message')) {
+      if ($result->xml->header->request_result_id != mediamosa_sdk::ERRORCODE_EMPTY_RESULT) {
+        $asset = $result->xml->items->item[0];
+        // Create a presentation object including mediafiles from the asset.
+        $assets[$asset_id] = weblectures_mm_parse_asset($asset, TRUE);
+      }
+    }
+  }
+
+  return $assets[$asset_id];
+}
+
+/**
+ * Parses an xml asset into a presentation object.
+ * @param object $asset SimpleXML object.
+ */
+function weblectures_mm_parse_asset($asset) {
+  if (isset($asset->asset_id)) {
+    // Build up basic info for presentation.
+    $presentation = new stdClass();
+    $presentation->asset_id = (string)$asset->asset_id;
+    $presentation->title = !empty($asset->dublin_core->title) ? (string)$asset->dublin_core->title : '< ' . t('Untitled') . ' >';
+    $presentation->duration = weblectures_mm_parse_duration((string)$asset->mediafile_duration);
+    $presentation->created = strtotime((string)$asset->videotimestamp);
+    $presentation->still = (string)$asset->vpx_still_url;
+    if (empty($presentation->still)) {
+      $presentation->still = url(variable_get('weblectures_mm_default_still', drupal_get_path('module', 'weblectures_mm') . '/assets/images/default.jpg'));
+    }
+    if (isset($asset->mediafiles->mediafile)) {
+      // Loop through mediaitems.
+      foreach ($asset->mediafiles->mediafile as $mediafile) {
+        $mediafile_id = (string)$mediafile->mediafile_id;
+        $tag = (string)$mediafile->tag;
+        switch ($tag) {
+          case 'videoSource':
+            $presentation->videosources[$mediafile_id]->asset_id = $presentation->asset_id;
+            $presentation->videosources[$mediafile_id]->mediafile_id = $mediafile_id;
+            $presentation->videosources[$mediafile_id]->width = (int)$mediafile->metadata->width;
+            $presentation->videosources[$mediafile_id]->height = (int)$mediafile->metadata->height;
+            $presentation->videosources[$mediafile_id]->duration = weblectures_mm_parse_duration((string)$mediafile->metadata->file_duration);
+            $presentation->videosources[$mediafile_id]->still = (string)$mediafile->still->still_ticket;
+            $presentation->videosources[$mediafile_id]->filename = (string)$mediafile->filename;
+            break;
+          case 'slideSource':
+            $presentation->slidesources[$mediafile_id]->mediafile_id = $mediafile_id;
+            if ($still = $mediafile->still[0]) {
+              $presentation->slidesources[$mediafile_id]->width = (int)$still->width;
+              $presentation->slidesources[$mediafile_id]->height = (int)$still->height;
+            }
+            foreach ($mediafile->still as $still) {
+              $slide = new stdClass();
+              $slide->url = (string)$still->still_ticket;
+              $slide->marker = empty($still->still_time_code) ? ((float)$still->still_order / 1000) : (float)$still->still_time_code;
+              $presentation->slidesources[$mediafile_id]->slides[$slide->marker * 1000] = $slide;
+            }
+            break;
+          default:
+            $presentation->videosources[(string)$mediafile->mediafile_id_source]->transcodings[(int)$mediafile->transcode_profile_id] = $mediafile_id;
+            break;
+        }
+      }
+    }
+    if (isset($presentation->videosources)) {
+      $presentation->videosources = array_values($presentation->videosources);
+    }
+    if (isset($presentation->slidesources)) {
+        $presentation->slidesources = array_values($presentation->slidesources);
+    }
+    return $presentation;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Get a download url for a video.
+ * If only mediafile_id is specified it returns a url to that specific mediafile.
+ * If only a profile id is specified it returns a url to a video transcoded with that profile.
+ * If both mediafile id and profile id are specified is returns a url to the video transcoded
+ * with that profile with the mediafile as source.
+ * @param string $asset_id Asset ID.
+ * @param string $mediafile_id [optional] mediafile ID
+ * @param int $profile [optional] transcoding profile ID
+ * @param string $type [optional] what type of url to request. Defaults to 'plain'.
+ */
+function weblectures_mm_get_video_url($asset_id, $mediafile_id = NULL, $profile = NULL, $type = 'plain') {
+  $connector = weblectures_mm_get_connector();
+  $options = array(
+    'data' => array(
+      'user_id' => variable_get('mediamosa_connector_username', NULL),
+      'response' => $type,
+    ),
+  );
+  if (isset($profile)) {
+    $options['data']['profile_id'] = $profile;
+    if (isset($mediafile_id)) {
+      $options['data']['original_mediafile_id'] = $mediafile_id;
+    }
+  }
+  elseif (isset($mediafile_id)) {
+    $options['data']['mediafile_id'] = $mediafile_id;
+  }
+  else {
+    return FALSE;
+  }
+  $result = $connector->request_get('asset/' . $asset_id . '/play', $options);
+  if (mediamosa_connector::check_result($result, NULL, 'ERROR: %code - %message')) {
+    $url = (string)$result->xml->items->item->output;
+  }
+  else {
+    return FALSE;
+  }
+  return $url;
+}

@@ -1,0 +1,181 @@
+<?php
+
+/**
+ * @file
+ * Module file
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * @return An array of menu items.
+ */
+function weblectures_ui_menu() {
+  $items = array();
+
+  $items['mm-browse'] = array(
+    'title' => 'Browse weblectures',
+    'description' => 'Browse mediamosa assets.',
+    'page callback' => 'weblectures_ui_browse',
+    'page arguments' => array(),
+    'access arguments' => array('view weblectures'),
+  );
+  $items['mm-browse/%'] = array(
+    'description' => 'View asset details',
+    'page callback' => 'weblectures_ui_browse_asset',
+    'page arguments' => array(1),
+    'access arguments' => array('view weblectures'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permissions().
+ */
+function weblectures_ui_permission() {
+  return array(
+    'view weblectures' => array(
+      'title' => t('View mediamosa assets'),
+      'description' => t('View assets from mediamosa.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function weblectures_ui_theme() {
+  return array(
+    'weblectures_ui_teaser' => array(
+      'variables' => array('presentation'),
+    ),
+    'weblectures_ui_teasers' => array(
+      'variables' => array('presentations'),
+    ),
+  );
+}
+
+/**
+ * Page callback for asset listing.
+ */
+function weblectures_ui_browse() {
+  $output = '';
+
+  $page = isset($_GET['page']) ? intval($_GET['page']) : 0;
+  $assets_per_page = 9;
+
+  list($total_items, $presentations) = weblectures_mm_get_presentations($assets_per_page, $page * $assets_per_page);
+
+  if ($total_items == 0) {
+    return t('No assets available.');
+  }
+  pager_default_initialize($total_items, $assets_per_page);
+
+  $output .= theme('pager', array('quantity' => $total_items));
+  $output .= theme('weblectures_ui_teasers', array('presentations' => $presentations));
+  $output .= theme('pager', array('quantity' => $total_items));
+
+  return $output;
+}
+
+
+/**
+ * Page callback for a single asset
+ * @param string $asset_id
+ */
+function weblectures_ui_browse_asset($asset_id) {
+  $output = '';
+  $presentation = weblectures_mm_asset_to_presentation($asset_id);
+  if (!$presentation) {
+    drupal_not_found();
+    exit;
+  }
+  drupal_set_title($presentation->title);
+  // Render videoplayer to display the presentation.
+  $elements = weblectures_mm_presentation_to_fideo($presentation);
+  $output .= fideo_render($elements);
+
+  return $output;
+}
+
+
+/**
+ * Format second to time.
+ * @param float $seconds
+ * @return string HH:MM:SS
+ */
+function weblectures_ui_format_duration($seconds) {
+  $times = array(3600, 60, 1);
+  $time = '';
+  $tmp = '';
+  for ($i = 0; $i < 3; $i++) {
+    $tmp = floor($seconds / $times[$i]);
+    if ($tmp < 1) {
+      $tmp = '00';
+    }
+    elseif ($tmp < 10) {
+      $tmp = '0' . $tmp;
+    }
+    $time .= $tmp;
+    if ($i < 2) {
+      $time .= ':';
+    }
+    $seconds = $seconds % $times[$i];
+  }
+  return $time;
+}
+
+/**
+ * Theme presentation
+ * @TODO: Urgently in need of some love and attentions from someone that knows a things or two about xHTML and CSS.
+ * @param array $variables
+ */
+function theme_weblectures_ui_teaser($variables) {
+  $presentation = $variables['presentation'];
+  $output = '<div class="teaser">';
+  $output .= '<div class="teaser-title">';
+  $output .= '<span>';
+  $output .= l(check_plain($presentation->title), 'mm-browse/' . $presentation->asset_id, array('html' => TRUE));
+  $output .= '</span><span>';
+  $output .= '&nbsp;[' . weblectures_ui_format_duration($presentation->duration) . ']';
+  $output .= '</span>';
+  $output .= '</div>';
+  $output .= '<div class="poster">';
+  $variables = array(
+    'path' => $presentation->still,
+    'alt' => t('Preview image for !title', array('!title' => $presentation->title)),
+    'title' => $presentation->title,
+    'width' => 240,
+    'attributes' => array('class' => array('preview')),
+  );
+  $still = theme('image', $variables);
+  $output .= l($still, 'mm-browse/' . $presentation->asset_id, array('html' => TRUE));
+  $output .= '</div>';
+  $output .= '</div>' . "\n";
+  return $output;
+}
+
+/**
+ * Theme function for an overview of presentation teasers.
+ * @TODO: Urgently in need of some love and attentions from someone that knows a things or two about xHTML and CSS.
+ * @param array $variables
+ */
+function theme_weblectures_ui_teasers($variables) {
+  $presentations = $variables['presentations'];
+  $count = count($presentations);
+  $dimension = ceil(sqrt($count));
+  $output = '<div class="teasers">';
+  for ($i = 0; $i < $dimension; $i++) {
+    $output .= '<div class="teaser-row">';
+    for ($j = 0; $j < $dimension; $j++) {
+      $index = 3*$i+$j;
+      if ($index < $count) {
+        $output .= theme_weblectures_ui_teaser(array('presentation' => $presentations[$index]));
+      }
+    }
+    $output .= '</div>';
+  }
+  $output .= '</div>';
+  return $output;
+}

@@ -1,0 +1,8 @@
+; $Id: virtualcutter.info 267 2011-12-01 16:37:37Z thijs $
+name = Virtual cutter
+description = "Tool for determining start- and stop-times for a given MediaMosa asset using a HTML5 video (with Flash fallback) user interface."
+version = "7.x-1.0-beta2"
+core = 7.x
+php = 5.1
+
+dependencies[] = weblectures_mm
