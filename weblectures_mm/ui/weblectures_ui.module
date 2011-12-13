@@ -94,7 +94,12 @@ function weblectures_ui_browse_asset($asset_id) {
   drupal_set_title($presentation->title);
   // Render videoplayer to display the presentation.
   $elements = weblectures_mm_presentation_to_fideo($presentation);
-  $output .= fideo_render($elements);
+  if ($elements) {
+    $output .= fideo_render($elements);
+  }
+  else {
+    $output .= t('No presentation available.');
+  }
 
   return $output;
 }

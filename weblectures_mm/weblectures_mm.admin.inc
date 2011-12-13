@@ -1,4 +1,5 @@
 <?php
+// $Id: weblectures_mm.admin.inc 285 2011-12-13 12:50:01Z thijs $
 
 /**
  * @file

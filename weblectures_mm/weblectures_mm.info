@@ -1,4 +1,4 @@
-; $Id$
+; $Id: weblectures_mm.info 285 2011-12-13 12:50:01Z thijs $
 name = Web lectures (MediaMosa)
 description = Web lectures API module for the MediaMosa backend, used for front end applications.
 version = "7.x-1.0-beta2"

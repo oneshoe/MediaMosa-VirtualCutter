@@ -1,4 +1,4 @@
-; $Id$
+; $Id: weblectures_ui.info 285 2011-12-13 12:50:01Z thijs $
 name = Web lectures UI
 description = Web lectures user interface module, used for displaying a list of available MediaMosa assets and implements the Fideo HTML5 web lectures player.
 version = "7.x-1.0-beta2"
